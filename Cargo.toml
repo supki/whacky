@@ -1,0 +1,9 @@
+[package]
+
+name = "whacky"
+version = "0.1.0"
+authors = [ "Matvey Aksenov <matvey.aksenov@gmail.com>" ]
+
+[[bin]]
+
+name = "whacky"
