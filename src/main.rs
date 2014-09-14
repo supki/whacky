@@ -103,7 +103,7 @@ fn whack(opts: &Options) -> bool {
     std::rand::task_rng().gen_range(0, 100) > std::cmp::min(std::cmp::max(opts.chance, 0), 100)
 }
 
-fn execvp_easy(name: &String, args: &Vec<String>) {
+fn execvp_easy(name: &String, args: Box<Vec<String>>) {
     let c_name: CString = name.to_c_str();
     let c_args: Vec<CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
     with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
@@ -112,14 +112,14 @@ fn execvp_easy(name: &String, args: &Vec<String>) {
     });
 }
 
-fn with_argv<T>(prog: &CString, args: &[CString], f: proc(**libc::c_char) -> T) -> T {
-    let mut ptrs: Vec<*libc::c_char> = Vec::with_capacity(args.len() + 1);
+fn with_argv<T>(prog: &CString, args: &[CString], f: proc(*mut*const libc::c_char) -> T) -> T {
+    let mut ptrs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 1);
 
-    ptrs.push(prog.with_ref(|buf| buf));
-    ptrs.extend(args.iter().map(|tmp| tmp.with_ref(|buf| buf)));
+    ptrs.push(prog.as_ptr());
+    ptrs.extend(args.iter().map(|tmp| tmp.as_ptr()));
     ptrs.push(ptr::null());
 
-    f(ptrs.as_ptr())
+    f(ptrs.as_mut_ptr())
 }
 
 fn print_usage(version: &str) {
