@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-type ArgParse<T> = Result<T, Usage>;
+type ArgParse<T> = Result<T, Exit>;
 
 #[deriving(Show)]
 struct Options {
@@ -45,7 +45,7 @@ struct Exe {
 }
 
 #[deriving(Show)]
-enum Usage {
+enum Exit {
     Usage,
     Help,
     Version,
@@ -77,7 +77,7 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                     chance: val,
                                     exe: Some(Exe {
                                         name: exe.to_string(),
-                                        args: box std::vec::Vec::from_slice(args),
+                                        args: box args.to_vec(),
                                     })
                                 })
                             })
@@ -86,7 +86,7 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                 chance: val,
                                 exe: Some(Exe {
                                     name: exe.to_string(),
-                                    args: box std::vec::Vec::from_slice(args),
+                                    args: box args.to_vec(),
                                 })
                             })
                         }
