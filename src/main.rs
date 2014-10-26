@@ -41,7 +41,7 @@ struct Options<'a> {
 #[deriving(Show)]
 struct Exe<'a> {
     name: &'a str,
-    args: Box<Vec<String>>,
+    args: &'a[String],
 }
 
 #[deriving(Show)]
@@ -77,7 +77,7 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                     chance: val,
                                     exe: Some(Exe {
                                         name: exe.as_slice(),
-                                        args: box args.to_vec(),
+                                        args: args,
                                     })
                                 })
                             })
@@ -86,7 +86,7 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                 chance: val,
                                 exe: Some(Exe {
                                     name: exe.as_slice(),
-                                    args: box args.to_vec(),
+                                    args: args,
                                 })
                             })
                         }
@@ -103,7 +103,7 @@ fn whack(opts: &Options) -> bool {
     std::rand::task_rng().gen_range(0, 100) > std::cmp::min(std::cmp::max(opts.chance, 0), 100)
 }
 
-fn execvp_easy(name: &str, args: Box<Vec<String>>) {
+fn execvp_easy(name: &str, args: &[String]) {
     let c_name: CString = name.to_c_str();
     let c_args: Vec<CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
     with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
