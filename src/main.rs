@@ -53,14 +53,14 @@ enum Exit {
 }
 
 fn parse_args(args: &[String]) -> ArgParse<Options> {
-    uncons(args).map_or(Err(Usage), |(s, args)| {
+    args.uncons().map_or(Err(Usage), |(s, args)| {
         match s.as_slice() {
             "--help"    | "-h" => Err(Help),
             "--version" | "-v" => Err(Version),
             "--chance"  | "-c" => {
-                uncons(args).map_or(Err(Usage), |(s, args)| {
+                args.uncons().map_or(Err(Usage), |(s, args)| {
                     from_str(s.as_slice()).map_or(Err(Usage), |val| {
-                        uncons(skip("--", args)).map_or(
+                        args.skip("--").uncons().map_or(
                             Ok(Options {
                                 chance: val,
                                 exe: None
@@ -81,12 +81,19 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
     })
 }
 
-fn uncons<'a, T>(xs: &'a [T]) -> Option<(&'a T, &'a [T])> {
-    xs.head().map(|x| (x, xs.tail()))
+trait Uncons<'a, A> { fn uncons(&self) -> Option<(&'a A, &'a [A])>; }
+trait Skip<'a, A, B> { fn skip(&self, x: A) -> &'a [B]; }
+
+impl<'a, A> Uncons<'a, A> for &'a [A] {
+    fn uncons(&self) -> Option<(&'a A, &'a [A])> {
+        self.head().map(|x| (x, self.tail()))
+    }
 }
 
-fn skip<'a>(x: &str, xs: &'a [String]) -> &'a [String] {
-    uncons(xs).map_or(xs, |(y, ys)| { if x == y.as_slice() { ys } else { xs } })
+impl<'a > Skip<'a, &'a str, String> for &'a [String] {
+    fn skip(&self, x: &'a str) -> &'a [String] {
+        self.uncons().map_or(*self, |(y, ys)| { if x == y.as_slice() { ys } else { *self } })
+    }
 }
 
 fn whack(opts: &Options) -> bool {
