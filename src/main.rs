@@ -10,7 +10,7 @@ use std::rand::Rng;
 
 fn main() {
     let version = "0.1.0";
-    match parse_args(&os::args()) {
+    match parse_args(os::args().as_slice().tail()) {
         Err(Usage) => {
             os::set_exit_status(1);
             print_usage(version);
@@ -52,36 +52,19 @@ enum Exit {
     Version,
 }
 
-trait Uncons<'a, T> {
-    fn uncons(&self) -> Option<(&'a T, &'a [T])>;
-}
-
-impl<'a, T> Uncons<'a, T> for &'a [T] {
-    fn uncons(&self) -> Option<(&'a T, &'a [T])> {
-        self.head().map(|x| (x, self.tail()))
-    }
-}
-
-fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
-    args.as_slice().tail().uncons().map_or(Err(Usage), |(s, args)| {
+fn parse_args(args: &[String]) -> ArgParse<Options> {
+    uncons(args).map_or(Err(Usage), |(s, args)| {
         match s.as_slice() {
             "--help"    | "-h" => Err(Help),
             "--version" | "-v" => Err(Version),
             "--chance"  | "-c" => {
-                args.uncons().map_or(Err(Usage), |(s, args)| {
+                uncons(args).map_or(Err(Usage), |(s, args)| {
                     from_str(s.as_slice()).map_or(Err(Usage), |val| {
-                        args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
-                            if "--" == exe.as_slice() {
-                                args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
-                                    Ok(Options {
-                                        chance: val,
-                                        exe: Some(Exe {
-                                            name: exe.as_slice(),
-                                            args: args,
-                                        })
-                                    })
-                                })
-                            } else {
+                        uncons(skip("--", args)).map_or(
+                            Ok(Options {
+                                chance: val,
+                                exe: None
+                            }), |(exe, args)| {
                                 Ok(Options {
                                     chance: val,
                                     exe: Some(Exe {
@@ -89,14 +72,21 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                         args: args,
                                     })
                                 })
-                            }
+                            })
                         })
                     })
-                })
-            }
+                }
             _ => Err(Usage),
         }
     })
+}
+
+fn uncons<'a, T>(xs: &'a [T]) -> Option<(&'a T, &'a [T])> {
+    xs.head().map(|x| (x, xs.tail()))
+}
+
+fn skip<'a>(x: &str, xs: &'a [String]) -> &'a [String] {
+    uncons(xs).map_or(xs, |(y, ys)| { if x == y.as_slice() { ys } else { xs } })
 }
 
 fn whack(opts: &Options) -> bool {
