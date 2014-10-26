@@ -64,16 +64,24 @@ impl<'a, T> Uncons<'a, T> for &'a [T] {
 
 fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
     args.as_slice().tail().uncons().map_or(Err(Usage), |(s, args)| {
-        if "--help" == s.as_slice() || "-h" == s.as_slice() {
-            Err(Help)
-        } else if "--version" == s.as_slice() || "-v" == s.as_slice() {
-            Err(Version)
-        } else if "--chance" == s.as_slice() || "-c" == s.as_slice() {
-            args.uncons().map_or(Err(Usage), |(s, args)| {
-                from_str::<int>(s.as_slice()).map_or(Err(Usage), |val| {
-                    args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
-                        if "--" == exe.as_slice() {
-                            args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
+        match s.as_slice() {
+            "--help"    | "-h" => Err(Help),
+            "--version" | "-v" => Err(Version),
+            "--chance"  | "-c" => {
+                args.uncons().map_or(Err(Usage), |(s, args)| {
+                    from_str(s.as_slice()).map_or(Err(Usage), |val| {
+                        args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
+                            if "--" == exe.as_slice() {
+                                args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
+                                    Ok(Options {
+                                        chance: val,
+                                        exe: Some(Exe {
+                                            name: exe.as_slice(),
+                                            args: args,
+                                        })
+                                    })
+                                })
+                            } else {
                                 Ok(Options {
                                     chance: val,
                                     exe: Some(Exe {
@@ -81,21 +89,12 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                                         args: args,
                                     })
                                 })
-                            })
-                        } else {
-                            Ok(Options {
-                                chance: val,
-                                exe: Some(Exe {
-                                    name: exe.as_slice(),
-                                    args: args,
-                                })
-                            })
-                        }
+                            }
+                        })
                     })
                 })
-            })
-        } else {
-            Err(Usage)
+            }
+            _ => Err(Usage),
         }
     })
 }
