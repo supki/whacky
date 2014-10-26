@@ -1,17 +1,18 @@
 extern crate libc;
 
-use libc::funcs::posix88::unistd::execvp;
-use std::c_str::CString;
-use std::os::last_os_error;
+use libc::funcs::posix88::unistd;
+use std::c_str;
+use std::cmp;
+use std::os;
 use std::ptr;
 use std::rand::Rng;
 
 
 fn main() {
     let version = "0.1.0";
-    match parse_args(&std::os::args()) {
+    match parse_args(&os::args()) {
         Err(Usage) => {
-            std::os::set_exit_status(1);
+            os::set_exit_status(1);
             print_usage(version);
         }
         Err(Help) =>
@@ -20,7 +21,7 @@ fn main() {
             print_version(version),
         Ok(opts) => {
             if whack(&opts) {
-                std::os::set_exit_status(1);
+                os::set_exit_status(1);
             } else {
                 opts.exe.map_or((), |exe| {
                     execvp_easy(exe.name, exe.args)
@@ -100,19 +101,19 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
 }
 
 fn whack(opts: &Options) -> bool {
-    std::rand::task_rng().gen_range(0, 100) > std::cmp::min(std::cmp::max(opts.chance, 0), 100)
+    std::rand::task_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
 }
 
 fn execvp_easy(name: &str, args: &[String]) {
-    let c_name: CString = name.to_c_str();
-    let c_args: Vec<CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
+    let c_name: c_str::CString = name.to_c_str();
+    let c_args: Vec<c_str::CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
     with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
-        execvp(*c_argv, c_argv);
-        fail!("executing {}: {}", name, std::os::last_os_error());
+        unistd::execvp(*c_argv, c_argv);
+        fail!("executing {}: {}", name, os::last_os_error());
     });
 }
 
-fn with_argv<T>(prog: &CString, args: &[CString], f: proc(*mut*const libc::c_char) -> T) -> T {
+fn with_argv<T>(prog: &c_str::CString, args: &[c_str::CString], f: proc(*mut*const libc::c_char) -> T) -> T {
     let mut ptrs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 1);
 
     ptrs.push(prog.as_ptr());
