@@ -23,7 +23,7 @@ fn main() {
                 std::os::set_exit_status(1);
             } else {
                 opts.exe.map_or((), |exe| {
-                    execvp_easy(&exe.name.to_string(), exe.args)
+                    execvp_easy(exe.name, exe.args)
                 });
             }
         }
@@ -33,14 +33,14 @@ fn main() {
 type ArgParse<T> = Result<T, Exit>;
 
 #[deriving(Show)]
-struct Options {
+struct Options<'a> {
     chance: int,
-    exe: Option<Exe>,
+    exe: Option<Exe<'a>>,
 }
 
 #[deriving(Show)]
-struct Exe {
-    name: String,
+struct Exe<'a> {
+    name: &'a str,
     args: Box<Vec<String>>,
 }
 
@@ -63,20 +63,20 @@ impl<'a, T> Uncons<'a, T> for &'a [T] {
 
 fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
     args.as_slice().tail().uncons().map_or(Err(Usage), |(s, args)| {
-        if ["--help".to_string(), "-h".to_string()].contains(s) {
+        if "--help" == s.as_slice() || "-h" == s.as_slice() {
             Err(Help)
-        } else if ["--version".to_string(), "-v".to_string()].contains(s) {
+        } else if "--version" == s.as_slice() || "-v" == s.as_slice() {
             Err(Version)
-        } else if ["--chance".to_string(), "-c".to_string()].contains(s) {
+        } else if "--chance" == s.as_slice() || "-c" == s.as_slice() {
             args.uncons().map_or(Err(Usage), |(s, args)| {
                 from_str::<int>(s.as_slice()).map_or(Err(Usage), |val| {
                     args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
-                        if "--".to_string() == exe.to_string() {
+                        if "--" == exe.as_slice() {
                             args.uncons().map_or(Ok(Options { chance: val, exe: None }), |(exe, args)| {
                                 Ok(Options {
                                     chance: val,
                                     exe: Some(Exe {
-                                        name: exe.to_string(),
+                                        name: exe.as_slice(),
                                         args: box args.to_vec(),
                                     })
                                 })
@@ -85,7 +85,7 @@ fn parse_args(args: &Vec<String>) -> ArgParse<Options> {
                             Ok(Options {
                                 chance: val,
                                 exe: Some(Exe {
-                                    name: exe.to_string(),
+                                    name: exe.as_slice(),
                                     args: box args.to_vec(),
                                 })
                             })
@@ -103,7 +103,7 @@ fn whack(opts: &Options) -> bool {
     std::rand::task_rng().gen_range(0, 100) > std::cmp::min(std::cmp::max(opts.chance, 0), 100)
 }
 
-fn execvp_easy(name: &String, args: Box<Vec<String>>) {
+fn execvp_easy(name: &str, args: Box<Vec<String>>) {
     let c_name: CString = name.to_c_str();
     let c_args: Vec<CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
     with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
