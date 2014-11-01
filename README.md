@@ -1,5 +1,6 @@
 whacky
 ======
+[![Build Status](https://secure.travis-ci.org/supki/whacky.png?branch=master)](https://travis-ci.org/supki/whacky)
 
 Yet another randomly failing program.
 
