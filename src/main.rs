@@ -24,7 +24,7 @@ fn main() {
                 os::set_exit_status(1);
             } else {
                 opts.exe.map_or((), |exe| {
-                    execvp_easy(exe.name, exe.args)
+                    execvp(exe.name, exe.args)
                 });
             }
         }
@@ -100,23 +100,24 @@ fn whack(opts: &Options) -> bool {
     std::rand::task_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
 }
 
-fn execvp_easy(name: &str, args: &[String]) {
+fn execvp(name: &str, args: &[String]) {
     let c_name: c_str::CString = name.to_c_str();
     let c_args: Vec<c_str::CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
-    with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
-        unistd::execvp(*c_argv, c_argv);
-        panic!("executing {}: {}", name, os::last_os_error());
-    });
-}
 
-fn with_argv<T>(prog: &c_str::CString, args: &[c_str::CString], f: proc(*mut*const libc::c_char) -> T) -> T {
-    let mut ptrs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 1);
+    let mut xs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 2);
 
-    ptrs.push(prog.as_ptr());
-    ptrs.extend(args.iter().map(|tmp| tmp.as_ptr()));
-    ptrs.push(ptr::null());
+    xs.push(c_name.as_ptr());
+    xs.extend(c_args.iter().map(|tmp| tmp.as_ptr()));
+    xs.push(ptr::null());
 
-    f(ptrs.as_mut_ptr())
+    let c_arg0 = xs[0];
+    let c_argv = xs.as_mut_ptr();
+
+    unsafe {
+        unistd::execvp(c_arg0, c_argv);
+    };
+
+    panic!("execvp(3) failed with: {}", os::last_os_error());
 }
 
 fn print_usage(version: &str) {
