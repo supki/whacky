@@ -105,7 +105,7 @@ fn execvp_easy(name: &str, args: &[String]) {
     let c_args: Vec<c_str::CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
     with_argv(&c_name, c_args.as_slice(), proc(c_argv) -> () unsafe {
         unistd::execvp(*c_argv, c_argv);
-        fail!("executing {}: {}", name, os::last_os_error());
+        panic!("executing {}: {}", name, os::last_os_error());
     });
 }
 
