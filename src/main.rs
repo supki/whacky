@@ -11,13 +11,13 @@ use std::rand::Rng;
 fn main() {
     let version = "0.1.0";
     match parse_args(os::args().as_slice().tail()) {
-        Err(Usage) => {
+        Err(Exit::Usage) => {
             os::set_exit_status(1);
             print_usage(version);
         }
-        Err(Help) =>
+        Err(Exit::Help) =>
             print_usage(version),
-        Err(Version) =>
+        Err(Exit::Version) =>
             print_version(version),
         Ok(opts) => {
             if whack(&opts) {
@@ -53,13 +53,13 @@ enum Exit {
 }
 
 fn parse_args(args: &[String]) -> ArgParse<Options> {
-    args.uncons().map_or(Err(Usage), |(s, args)| {
+    args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
         match s.as_slice() {
-            "--help"    | "-h" => Err(Help),
-            "--version" | "-v" => Err(Version),
+            "--help"    | "-h" => Err(Exit::Help),
+            "--version" | "-v" => Err(Exit::Version),
             "--chance"  | "-c" => {
-                args.uncons().map_or(Err(Usage), |(s, args)| {
-                    from_str(s.as_slice()).map_or(Err(Usage), |val| {
+                args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
+                    from_str(s.as_slice()).map_or(Err(Exit::Usage), |val| {
                         args.skip("--").uncons().map_or(
                             Ok(Options {
                                 chance: val,
@@ -76,7 +76,7 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
                         })
                     })
                 }
-            _ => Err(Usage),
+            _ => Err(Exit::Usage),
         }
     })
 }
