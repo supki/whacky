@@ -36,7 +36,7 @@ type ArgParse<T> = Result<T, Exit>;
 
 #[derive(Show)]
 struct Options<'a> {
-    chance: int,
+    chance: i32,
     exe: Option<Exe<'a>>,
 }
 
