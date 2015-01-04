@@ -2,6 +2,7 @@ extern crate libc;
 
 use libc::funcs::posix88::unistd;
 use std::c_str;
+use std::c_str::ToCStr;
 use std::cmp;
 use std::os;
 use std::ptr;
@@ -33,19 +34,19 @@ fn main() {
 
 type ArgParse<T> = Result<T, Exit>;
 
-#[deriving(Show)]
+#[derive(Show)]
 struct Options<'a> {
     chance: int,
     exe: Option<Exe<'a>>,
 }
 
-#[deriving(Show)]
+#[derive(Show)]
 struct Exe<'a> {
     name: &'a str,
     args: &'a[String],
 }
 
-#[deriving(Show)]
+#[derive(Show)]
 enum Exit {
     Usage,
     Help,
@@ -59,7 +60,7 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
             "--version" | "-v" => Err(Exit::Version),
             "--chance"  | "-c" => {
                 args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
-                    from_str(s.as_slice()).map_or(Err(Exit::Usage), |val| {
+                    s.parse().map_or(Err(Exit::Usage), |val| {
                         args.skip("--").uncons().map_or(
                             Ok(Options {
                                 chance: val,
@@ -86,7 +87,7 @@ trait Skip<'a, A, B> { fn skip(&self, x: A) -> &'a [B]; }
 
 impl<'a, A> Uncons<'a, A> for &'a [A] {
     fn uncons(&self) -> Option<(&'a A, &'a [A])> {
-        self.head().map(|x| (x, self.tail()))
+        self.first().map(|x| (x, self.tail()))
     }
 }
 
@@ -97,7 +98,7 @@ impl<'a > Skip<'a, &'a str, String> for &'a [String] {
 }
 
 fn whack(opts: &Options) -> bool {
-    std::rand::task_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
+    std::rand::thread_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
 }
 
 fn execvp(name: &str, args: &[String]) {
