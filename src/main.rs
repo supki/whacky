@@ -1,8 +1,7 @@
 extern crate libc;
 
 use libc::funcs::posix88::unistd;
-use std::c_str;
-use std::c_str::ToCStr;
+use std::ffi::CString;
 use std::cmp;
 use std::os;
 use std::ptr;
@@ -102,8 +101,8 @@ fn whack(opts: &Options) -> bool {
 }
 
 fn execvp(name: &str, args: &[String]) {
-    let c_name: c_str::CString = name.to_c_str();
-    let c_args: Vec<c_str::CString> = args.iter().map(|tmp| tmp.to_c_str()).collect();
+    let c_name: CString = CString::from_slice(name.as_bytes());
+    let c_args: Vec<CString> = args.iter().map(|tmp| CString::from_slice(tmp.as_bytes())).collect();
 
     let mut xs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 2);
 
