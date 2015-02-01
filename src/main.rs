@@ -33,19 +33,19 @@ fn main() {
 
 type ArgParse<T> = Result<T, Exit>;
 
-#[derive(Show)]
+#[derive(Debug)]
 struct Options<'a> {
     chance: i32,
     exe: Option<Exe<'a>>,
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 struct Exe<'a> {
     name: &'a str,
     args: &'a[String],
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 enum Exit {
     Usage,
     Help,
