@@ -59,7 +59,7 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
             "--version" | "-v" => Err(Exit::Version),
             "--chance"  | "-c" => {
                 args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
-                    s.parse().map_or(Err(Exit::Usage), |val| {
+                    s.parse().ok().map_or(Err(Exit::Usage), |val| {
                         args.skip("--").uncons().map_or(
                             Ok(Options {
                                 chance: val,
