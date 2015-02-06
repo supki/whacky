@@ -3,6 +3,7 @@ extern crate libc;
 use libc::funcs::posix88::unistd;
 use std::ffi::CString;
 use std::cmp;
+use std::env;
 use std::os;
 use std::ptr;
 use std::rand::Rng;
@@ -10,25 +11,27 @@ use std::rand::Rng;
 
 fn main() {
     let version = "0.1.0";
-    match parse_args(os::args().as_slice().tail()) {
-        Err(Exit::Usage) => {
-            os::set_exit_status(1);
-            print_usage(version);
-        }
-        Err(Exit::Help) =>
-            print_usage(version),
-        Err(Exit::Version) =>
-            print_version(version),
-        Ok(opts) => {
-            if whack(&opts) {
-                os::set_exit_status(1);
-            } else {
-                opts.exe.map_or((), |exe| {
-                    execvp(exe.name, exe.args)
-                });
+    let maybe_args: Option<Vec<String>> = env::args().skip(1).map(|s| { s.into_string().ok() }).collect();
+    maybe_args.map_or_else(|| { die_usage(version) }, |args| {
+        match parse_args(&args[]) {
+            Err(Exit::Usage) => {
+                die_usage(version);
+            }
+            Err(Exit::Help) =>
+                print_usage(version),
+            Err(Exit::Version) =>
+                print_version(version),
+            Ok(opts) => {
+                if whack(&opts) {
+                    env::set_exit_status(1);
+                } else {
+                    opts.exe.map_or((), |exe| {
+                        execvp(exe.name, exe.args)
+                    });
+                }
             }
         }
-    }
+    })
 }
 
 type ArgParse<T> = Result<T, Exit>;
@@ -54,7 +57,7 @@ enum Exit {
 
 fn parse_args(args: &[String]) -> ArgParse<Options> {
     args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
-        match s.as_slice() {
+        match &s[] {
             "--help"    | "-h" => Err(Exit::Help),
             "--version" | "-v" => Err(Exit::Version),
             "--chance"  | "-c" => {
@@ -68,7 +71,7 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
                                 Ok(Options {
                                     chance: val,
                                     exe: Some(Exe {
-                                        name: exe.as_slice(),
+                                        name: &exe[],
                                         args: args,
                                     })
                                 })
@@ -92,7 +95,7 @@ impl<'a, A> Uncons<'a, A> for &'a [A] {
 
 impl<'a > Skip<'a, &'a str, String> for &'a [String] {
     fn skip(&self, x: &'a str) -> &'a [String] {
-        self.uncons().map_or(*self, |(y, ys)| { if x == y.as_slice() { ys } else { *self } })
+        self.uncons().map_or(*self, |(y, ys)| { if x == &y[] { ys } else { *self } })
     }
 }
 
@@ -118,6 +121,11 @@ fn execvp(name: &str, args: &[String]) {
     };
 
     panic!("execvp(3) failed with: {}", os::last_os_error());
+}
+
+fn die_usage(version: &str) {
+    env::set_exit_status(1);
+    print_usage(version);
 }
 
 fn print_usage(version: &str) {
