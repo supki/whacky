@@ -4,6 +4,9 @@ name = "whacky"
 version = "0.1.0"
 authors = [ "Matvey Aksenov <matvey.aksenov@gmail.com>" ]
 
+[dependencies]
+rand = "0.1.2"
+
 [[bin]]
 
 name = "whacky"

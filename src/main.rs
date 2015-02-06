@@ -1,4 +1,5 @@
 extern crate libc;
+extern crate rand;
 
 use libc::funcs::posix88::unistd;
 use std::ffi::CString;
@@ -6,7 +7,7 @@ use std::cmp;
 use std::env;
 use std::os;
 use std::ptr;
-use std::rand::Rng;
+use rand::Rng;
 
 
 fn main() {
@@ -100,7 +101,7 @@ impl<'a > Skip<'a, &'a str, String> for &'a [String] {
 }
 
 fn whack(opts: &Options) -> bool {
-    std::rand::thread_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
+    rand::thread_rng().gen_range(0, 100) > cmp::min(cmp::max(opts.chance, 0), 100)
 }
 
 fn execvp(name: &str, args: &[String]) {
