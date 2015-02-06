@@ -10,18 +10,19 @@ use std::ptr;
 use rand::Rng;
 
 
+static VERSION: &'static str = "0.1.0";
+
 fn main() {
-    let version = "0.1.0";
     let maybe_args: Option<Vec<String>> = env::args().skip(1).map(|s| { s.into_string().ok() }).collect();
-    maybe_args.map_or_else(|| { die_usage(version) }, |args| {
+    maybe_args.map_or_else(|| { die_usage() }, |args| {
         match parse_args(&args[]) {
             Err(Exit::Usage) => {
-                die_usage(version);
+                die_usage();
             }
             Err(Exit::Help) =>
-                print_usage(version),
+                print_usage(),
             Err(Exit::Version) =>
-                print_version(version),
+                print_version(),
             Ok(opts) => {
                 if whack(&opts) {
                     env::set_exit_status(1);
@@ -124,13 +125,13 @@ fn execvp(name: &str, args: &[String]) {
     panic!("execvp(3) failed with: {}", os::last_os_error());
 }
 
-fn die_usage(version: &str) {
+fn die_usage() {
     env::set_exit_status(1);
-    print_usage(version);
+    print_usage();
 }
 
-fn print_usage(version: &str) {
-    print_version(version);
+fn print_usage() {
+    print_version();
     println!("\n\
         Usage: whacky (-c PERCENTAGE|--chance PERCENTAGE) [[--] COMMAND]\n\
           whacky, yet another randomly failing program\n\
@@ -140,6 +141,6 @@ fn print_usage(version: &str) {
           -c,--chance         set success chance");
 }
 
-fn print_version(version: &str) {
-    println!("whacky {}", version);
+fn print_version() {
+    println!("whacky {}", VERSION);
 }
