@@ -13,27 +13,25 @@ use rand::Rng;
 static VERSION: &'static str = "0.1.0";
 
 fn main() {
-    let maybe_args: Option<Vec<String>> = env::args().skip(1).map(|s| { s.into_string().ok() }).collect();
-    maybe_args.map_or_else(|| { die_usage() }, |args| {
-        match parse_args(&args[]) {
-            Err(Exit::Usage) => {
-                die_usage();
-            }
-            Err(Exit::Help) =>
-                print_usage(),
-            Err(Exit::Version) =>
-                print_version(),
-            Ok(opts) => {
-                if whack(&opts) {
-                    env::set_exit_status(1);
-                } else {
-                    opts.exe.map_or((), |exe| {
-                        execvp(exe.name, exe.args)
-                    });
-                }
+    let args: Vec<String> = env::args().skip(1).collect();
+    match parse_args(&args[]) {
+        Err(Exit::Usage) => {
+            die_usage();
+        }
+        Err(Exit::Help) =>
+            print_usage(),
+        Err(Exit::Version) =>
+            print_version(),
+        Ok(opts) => {
+            if whack(&opts) {
+                env::set_exit_status(1);
+            } else {
+                opts.exe.map_or((), |exe| {
+                    execvp(exe.name, exe.args)
+                });
             }
         }
-    })
+    }
 }
 
 type ArgParse<T> = Result<T, Exit>;
