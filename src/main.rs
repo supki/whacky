@@ -1,4 +1,4 @@
-#![feature(std_misc, collections, core, env, os, libc)]
+#![feature(std_misc, collections, core, exit_status, os, libc)]
 
 extern crate libc;
 extern crate rand;
