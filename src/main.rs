@@ -1,4 +1,4 @@
-#![feature(collections, core, exit_status, os, libc)]
+#![feature(collections, core, exit_status, libc)]
 
 extern crate libc;
 extern crate rand;
@@ -7,7 +7,7 @@ use libc::funcs::posix88::unistd;
 use std::ffi::CString;
 use std::cmp;
 use std::env;
-use std::os;
+use std::io;
 use std::ptr;
 use rand::Rng;
 
@@ -123,7 +123,7 @@ fn execvp(name: &str, args: &[String]) {
         unistd::execvp(c_arg0, c_argv);
     };
 
-    panic!("execvp(3) failed with: {}", os::last_os_error());
+    panic!("execvp(3) failed with: {}", io::Error::last_os_error())
 }
 
 fn die_usage() {
