@@ -1,4 +1,4 @@
-#![feature(collections, core, exit_status, libc)]
+#![feature(collections, exit_status, libc)]
 
 extern crate libc;
 extern crate rand;
@@ -16,7 +16,7 @@ static VERSION: &'static str = "0.1.0";
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
-    match parse_args(args.as_slice()) {
+    match parse_args(args.as_ref()) {
         Err(Exit::Usage) => {
             die_usage();
         }
@@ -59,7 +59,7 @@ enum Exit {
 
 fn parse_args(args: &[String]) -> ArgParse<Options> {
     args.uncons().map_or(Err(Exit::Usage), |(s, args)| {
-        match s.as_slice() {
+        match s.as_ref() {
             "--help"    | "-h" => Err(Exit::Help),
             "--version" | "-v" => Err(Exit::Version),
             "--chance"  | "-c" => {
@@ -73,7 +73,7 @@ fn parse_args(args: &[String]) -> ArgParse<Options> {
                                 Ok(Options {
                                     chance: val,
                                     exe: Some(Exe {
-                                        name: exe.as_slice(),
+                                        name: exe.as_ref(),
                                         args: args,
                                     })
                                 })
@@ -97,7 +97,9 @@ impl<'a, A> Uncons<'a, A> for &'a [A] {
 
 impl<'a > Skip<'a, &'a str, String> for &'a [String] {
     fn skip(&self, x: &'a str) -> &'a [String] {
-        self.uncons().map_or(*self, |(y, ys)| { if x == y.as_slice() { ys } else { *self } })
+        self.uncons().map_or(*self, |(y, ys)| {
+            if x == AsRef::<str>::as_ref(y) { ys } else { *self }
+        })
     }
 }
 
@@ -108,7 +110,7 @@ fn whack(opts: &Options) -> bool {
 fn execvp(name: &str, args: &[String]) {
     let c_name = CString::new(name).unwrap(); // should be safe, the string is genuine
     let c_args: Vec<CString> =
-        args.iter().map(|tmp| CString::new(tmp.as_slice()).unwrap()).collect(); // likewise
+        args.iter().map(|tmp| { CString::new(AsRef::<str>::as_ref(tmp)).unwrap() }).collect(); // likewise
 
     let mut xs: Vec<*const libc::c_char> = Vec::with_capacity(args.len() + 2);
 
